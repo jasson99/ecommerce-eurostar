@@ -1,0 +1,42 @@
+name: API Test Automation
+
+on:
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  api-tests:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Clone repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+
+      - name: Run npm install
+        run: npm install
+
+      - name: Run API in background
+        run: npm start &
+
+      - name: Wait until API is running
+        run: |
+          for i in {1..60}; do
+            code=$(curl --silent --output /dev/null --write-out "%{http_code}" http://127.0.0.1:3000/healthcheck || true)
+            if [ "$code" = "200" ]; then
+              echo "API is up"
+              exit 0
+            fi
+            sleep 1
+          done
+          echo "API failed health check"
+          exit 1
+
+      - name: Run test scripts
+        run: npm test
