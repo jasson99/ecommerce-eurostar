@@ -1,0 +1,25 @@
+{
+  "name": "ecommerce-eurostar",
+  "version": "1.0.0",
+  "description": "In-memory e-commerce REST API with JWT auth and checkout rules",
+  "main": "src/server.js",
+  "scripts": {
+    "start": "node src/server.js",
+    "dev": "node src/server.js"
+  },
+  "keywords": [
+    "express",
+    "jwt",
+    "ecommerce",
+    "rest-api"
+  ],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "bcryptjs": "^3.0.3",
+    "express": "^5.2.1",
+    "jsonwebtoken": "^9.0.3",
+    "swagger-ui-express": "^5.0.1",
+    "yamljs": "^0.3.0"
+  }
+}
