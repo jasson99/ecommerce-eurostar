@@ -1,0 +1,347 @@
+openapi: 3.0.3
+info:
+  title: E-commerce Eurostar API
+  version: 1.0.0
+  description: |
+    REST API for in-memory e-commerce checkout with JWT authentication.
+
+    Business rules:
+    - Checkout accepts only cash or credit_card.
+    - Cash applies a 10% discount.
+    - Only authenticated users can checkout.
+servers:
+  - url: http://localhost:3000
+    description: Local development server
+paths:
+  /:
+    get:
+      summary: Root endpoint
+      description: Returns API status and available endpoints.
+      responses:
+        "200":
+          description: API status response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: E-commerce Eurostar API is running
+                  endpoints:
+                    type: array
+                    items:
+                      type: string
+                    example:
+                      - POST /register
+                      - POST /login
+                      - POST /checkout
+                      - GET /healthcheck
+  /healthcheck:
+    get:
+      summary: Health check
+      description: Returns service status and timestamp.
+      responses:
+        "200":
+          description: Service is healthy
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HealthcheckResponse"
+  /register:
+    post:
+      summary: Register a new user
+      description: Creates a user in memory and returns JWT token.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RegisterRequest"
+      responses:
+        "201":
+          description: User registered successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthResponse"
+        "400":
+          description: Missing required fields
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "409":
+          description: Email already registered
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /login:
+    post:
+      summary: User login
+      description: Authenticates user and returns JWT token.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LoginRequest"
+      responses:
+        "200":
+          description: Login successful
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthResponse"
+        "400":
+          description: Missing required fields
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "401":
+          description: Invalid email or password
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /checkout:
+    post:
+      summary: Perform checkout
+      description: |
+        Performs checkout for an authenticated user.
+        Accepted payment methods: cash, credit_card.
+        Cash applies a 10% discount over subtotal.
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CheckoutRequest"
+      responses:
+        "200":
+          description: Checkout completed successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CheckoutResponse"
+        "400":
+          description: Validation error in request payload
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "401":
+          description: Missing, invalid, or expired token
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /swagger:
+    get:
+      summary: Get Swagger file
+      description: Renders the OpenAPI YAML file used to describe this API.
+      responses:
+        "200":
+          description: Swagger YAML file
+          content:
+            application/yaml:
+              schema:
+                type: string
+  /docs:
+    get:
+      summary: Swagger UI page
+      description: Renders interactive Swagger UI documentation.
+      responses:
+        "200":
+          description: HTML documentation page
+          content:
+            text/html:
+              schema:
+                type: string
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  schemas:
+    ErrorResponse:
+      type: object
+      properties:
+        message:
+          type: string
+      required:
+        - message
+    HealthcheckResponse:
+      type: object
+      properties:
+        status:
+          type: string
+          example: ok
+        service:
+          type: string
+          example: ecommerce-eurostar-api
+        timestamp:
+          type: string
+          format: date-time
+      required:
+        - status
+        - service
+        - timestamp
+    RegisterRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          example: Daniel Silva
+        email:
+          type: string
+          format: email
+          example: daniel@example.com
+        password:
+          type: string
+          example: daniel123
+      required:
+        - name
+        - email
+        - password
+    LoginRequest:
+      type: object
+      properties:
+        email:
+          type: string
+          format: email
+          example: alice@example.com
+        password:
+          type: string
+          example: alice123
+      required:
+        - email
+        - password
+    AuthUser:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 1
+        name:
+          type: string
+          example: Alice Johnson
+        email:
+          type: string
+          format: email
+          example: alice@example.com
+      required:
+        - id
+        - name
+        - email
+    AuthResponse:
+      type: object
+      properties:
+        token:
+          type: string
+        user:
+          $ref: "#/components/schemas/AuthUser"
+      required:
+        - token
+        - user
+    CheckoutItem:
+      type: object
+      properties:
+        productId:
+          type: integer
+          example: 1
+        quantity:
+          type: integer
+          minimum: 1
+          example: 2
+      required:
+        - productId
+        - quantity
+    CheckoutRequest:
+      type: object
+      properties:
+        paymentMethod:
+          type: string
+          enum:
+            - cash
+            - credit_card
+          example: cash
+        items:
+          type: array
+          minItems: 1
+          items:
+            $ref: "#/components/schemas/CheckoutItem"
+      required:
+        - paymentMethod
+        - items
+    CheckoutItemDetail:
+      type: object
+      properties:
+        productId:
+          type: integer
+        name:
+          type: string
+        quantity:
+          type: integer
+        unitPrice:
+          type: number
+          format: float
+        lineTotal:
+          type: number
+          format: float
+        currency:
+          type: string
+          example: EUR
+      required:
+        - productId
+        - name
+        - quantity
+        - unitPrice
+        - lineTotal
+        - currency
+    CheckoutSummary:
+      type: object
+      properties:
+        subtotal:
+          type: number
+          format: float
+        discount:
+          type: number
+          format: float
+        total:
+          type: number
+          format: float
+        currency:
+          type: string
+          example: EUR
+      required:
+        - subtotal
+        - discount
+        - total
+        - currency
+    CheckoutResponse:
+      type: object
+      properties:
+        customer:
+          $ref: "#/components/schemas/AuthUser"
+        paymentMethod:
+          type: string
+          enum:
+            - cash
+            - credit_card
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/CheckoutItemDetail"
+        summary:
+          $ref: "#/components/schemas/CheckoutSummary"
+      required:
+        - customer
+        - paymentMethod
+        - items
+        - summary

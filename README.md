@@ -75,6 +75,15 @@ Passwords are shown in plain text here only for initial login convenience.
 curl -X GET http://localhost:3000/healthcheck
 ```
 
+### Swagger Documentation
+
+- Raw OpenAPI file: `GET /swagger`
+- Interactive Swagger UI: `GET /docs` (redirects to `/docs/`)
+
+```bash
+curl -X GET http://localhost:3000/swagger
+```
+
 ### 2) Register
 
 ```bash
